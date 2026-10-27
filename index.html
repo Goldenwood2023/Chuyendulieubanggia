@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Cụ Chuyển Đổi Dữ Liệu Ống Nhựa HDPE</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- SheetJS (XLSX) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <!-- Font Family -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f1f1; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 flex flex-col">
+
+    <!-- Header -->
+    <header class="bg-white border-b border-slate-200 sticky top-0 z-30 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-blue-600 text-white rounded-xl shadow-md">
+                    <i data-lucide="file-spreadsheet" class="w-6 h-6"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg leading-tight text-slate-900">HDPE Data Converter</h1>
+                    <p class="text-xs text-slate-500">Chuyển đổi bảng ma trận giá ống HDPE sang dạng cột chuẩn</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="btnSampleData" class="inline-flex items-center space-x-1.5 px-3.5 py-2 text-xs font-medium text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors border border-blue-200">
+                    <i data-lucide="sparkles" class="w-4 h-4"></i>
+                    <span>Tải dữ liệu mẫu</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
+
+        <!-- File Dropzone & Control Panel -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- Upload Box -->
+            <div class="lg:col-span-2 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                        <i data-lucide="upload-cloud" class="w-4 h-4 text-blue-600"></i>
+                        Tải lên File Excel Ma Trận (.xls, .xlsx)
+                    </h2>
+                    
+                    <div id="dropzone" class="border-2 border-dashed border-slate-300 hover:border-blue-500 rounded-xl p-8 text-center bg-slate-50/50 hover:bg-blue-50/30 transition-all cursor-pointer flex flex-col items-center justify-center min-h-[160px]">
+                        <input type="file" id="fileInput" class="hidden" accept=".xlsx, .xls">
+                        <div class="p-3 bg-blue-100 text-blue-600 rounded-full mb-3">
+                            <i data-lucide="file-up" class="w-6 h-6"></i>
+                        </div>
+                        <p class="text-sm font-medium text-slate-700">Kéo thả file Excel vào đây hoặc <span class="text-blue-600 underline">chọn file</span></p>
+                        <p class="text-xs text-slate-400 mt-1">Hỗ trợ các file .xlsx, .xls chuẩn cấu trúc báo giá HDPE</p>
+                    </div>
+                </div>
+
+                <div id="fileInfo" class="hidden mt-4 p-3 bg-slate-100 rounded-lg flex items-center justify-between text-xs text-slate-600">
+                    <div class="flex items-center space-x-2 truncate">
+                        <i data-lucide="file-check" class="w-4 h-4 text-emerald-600 flex-shrink-0"></i>
+                        <span id="fileName" class="font-medium truncate">data.xlsx</span>
+                    </div>
+                    <button id="btnRemoveFile" class="text-slate-400 hover:text-rose-600">
+                        <i data-lucide="x" class="w-4 h-4"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Configuration / Summary Box -->
+            <div class="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+                <div>
+                    <h2 class="text-sm font-semibold text-slate-700 mb-3 flex items-center gap-2">
+                        <i data-lucide="sliders" class="w-4 h-4 text-blue-600"></i>
+                        Tùy chọn & Thống kê
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-600 mb-1">Chọn Sheet để xử lý</label>
+                            <select id="sheetSelect" disabled class="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-slate-700 focus:ring-2 focus:ring-blue-500 focus:outline-none disabled:opacity-50">
+                                <option value="">Chưa có dữ liệu...</option>
+                            </select>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-3 pt-2">
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <span class="block text-xs text-slate-400">Tổng số dòng</span>
+                                <span id="statRowCount" class="text-lg font-bold text-slate-800">0</span>
+                            </div>
+                            <div class="p-3 bg-slate-50 rounded-xl border border-slate-100">
+                                <span class="block text-xs text-slate-400">Chủng loại PE</span>
+                                <span id="statPETypes" class="text-lg font-bold text-blue-600">-</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-4 mt-4 border-t border-slate-100">
+                    <button id="btnExport" disabled class="w-full py-2.5 px-4 bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 text-white text-xs font-semibold rounded-xl shadow-md disabled:shadow-none transition-all flex items-center justify-center space-x-2">
+                        <i data-lucide="download" class="w-4 h-4"></i>
+                        <span>Xuất File Excel Chuẩn (.xlsx)</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Table Section -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col">
+            
+            <!-- Table Action Bar -->
+            <div class="p-4 border-b border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50/50">
+                <div class="flex items-center space-x-2 w-full sm:w-auto">
+                    <div class="relative w-full sm:w-64">
+                        <i data-lucide="search" class="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                        <input type="text" id="searchInput" placeholder="Tìm theo DN, PN, Giá..." class="w-full text-xs pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <select id="filterPE" class="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500">
+                        <option value="ALL">Tất cả PE</option>
+                    </select>
+
+                    <select id="filterPN" class="text-xs bg-white border border-slate-200 rounded-lg px-3 py-2 text-slate-700 focus:ring-2 focus:ring-blue-500">
+                        <option value="ALL">Tất cả PN</option>
+                    </select>
+                </div>
+
+                <div class="flex items-center space-x-3 text-xs text-slate-500 w-full sm:w-auto justify-between sm:justify-end">
+                    <span>Trang <strong id="currentPage">1</strong> / <span id="totalPages">1</span></span>
+                    <div class="flex space-x-1">
+                        <button id="btnPrevPage" class="p-1.5 border border-slate-200 rounded-md bg-white hover:bg-slate-100 disabled:opacity-40">
+                            <i data-lucide="chevron-left" class="w-4 h-4"></i>
+                        </button>
+                        <button id="btnNextPage" class="p-1.5 border border-slate-200 rounded-md bg-white hover:bg-slate-100 disabled:opacity-40">
+                            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Table Container -->
+            <div class="overflow-x-auto custom-scrollbar min-h-[350px] max-h-[500px]">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-100 text-slate-600 font-semibold border-b border-slate-200 uppercase tracking-wider sticky top-0 z-10">
+                            <th class="py-3 px-4 w-16 text-center">STT</th>
+                            <th class="py-3 px-4">PE (Mác nhựa)</th>
+                            <th class="py-3 px-4">DN (Đường kính mm)</th>
+                            <th class="py-3 px-4">PN (Áp suất bar)</th>
+                            <th class="py-3 px-4">t (Độ dày mm)</th>
+                            <th class="py-3 px-4 text-right">Giá niêm yết (VNĐ)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700">
+                        <!-- Rows rendered via JS -->
+                        <tr>
+                            <td colspan="6" class="text-center py-12 text-slate-400">
+                                <i data-lucide="inbox" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                                Chưa có dữ liệu. Vui lòng tải file Excel hoặc chọn Dữ liệu mẫu.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Footer Info Bar -->
+            <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex justify-between items-center">
+                <span id="showingCount">Hiển thị 0 / 0 bản ghi</span>
+                <span class="text-slate-400 text-[11px]">Cấu trúc tự động chuẩn hóa: PE | DN | PN | t | Giá niêm yết</span>
+            </div>
+        </div>
+
+    </main>
+
+    <!-- App Logic JS -->
+    <script>
+        // Data State
+        let rawWorkbook = null;
+        let convertedData = [];
+        let filteredData = [];
+        let currentPage = 1;
+        const pageSize = 15;
+
+        // DOM Elements
+        const dropzone = document.getElementById('dropzone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const btnRemoveFile = document.getElementById('btnRemoveFile');
+        const sheetSelect = document.getElementById('sheetSelect');
+        const btnExport = document.getElementById('btnExport');
+        const btnSampleData = document.getElementById('btnSampleData');
+        const tableBody = document.getElementById('tableBody');
+        const searchInput = document.getElementById('searchInput');
+        const filterPE = document.getElementById('filterPE');
+        const filterPN = document.getElementById('filterPN');
+        const statRowCount = document.getElementById('statRowCount');
+        const statPETypes = document.getElementById('statPETypes');
+        const currentPageEl = document.getElementById('currentPage');
+        const totalPagesEl = document.getElementById('totalPages');
+        const btnPrevPage = document.getElementById('btnPrevPage');
+        const btnNextPage = document.getElementById('btnNextPage');
+        const showingCount = document.getElementById('showingCount');
+
+        // Init Lucide Icons
+        lucide.createIcons();
+
+        // Event Listeners for File Drag & Drop
+        dropzone.addEventListener('click', () => fileInput.click());
+        dropzone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropzone.classList.add('border-blue-500', 'bg-blue-50/50');
+        });
+        dropzone.addEventListener('dragleave', () => {
+            dropzone.classList.remove('border-blue-500', 'bg-blue-50/50');
+        });
+        dropzone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropzone.classList.remove('border-blue-500', 'bg-blue-50/50');
+            if (e.dataTransfer.files.length) {
+                handleFile(e.dataTransfer.files[0]);
+            }
+        });
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        btnRemoveFile.addEventListener('click', resetApp);
+        sheetSelect.addEventListener('change', () => processSelectedSheet());
+        btnSampleData.addEventListener('click', loadSampleData);
+        btnExport.addEventListener('click', exportToExcel);
+
+        // Filter / Search / Pagination Events
+        searchInput.addEventListener('input', applyFilters);
+        filterPE.addEventListener('change', applyFilters);
+        filterPN.addEventListener('change', applyFilters);
+        btnPrevPage.addEventListener('click', () => { if (currentPage > 1) { currentPage--; renderTable(); } });
+        btnNextPage.addEventListener('click', () => { if (currentPage < Math.ceil(filteredData.length / pageSize)) { currentPage++; renderTable(); } });
+
+        // Handle File Reading
+        function handleFile(file) {
+            fileName.textContent = file.name;
+            fileInfo.classList.remove('hidden');
+
+            const reader = new FileReader();
+            reader.onload = function (e) {
+                const data = new Uint8Array(e.target.result);
+                rawWorkbook = XLSX.read(data, { type: 'array' });
+                
+                // Populate Sheet Selector
+                sheetSelect.innerHTML = '<option value="ALL">-- Tất cả các Sheet --</option>';
+                rawWorkbook.SheetNames.forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    sheetSelect.appendChild(opt);
+                });
+                sheetSelect.disabled = false;
+                
+                // Default process all sheets
+                processSelectedSheet();
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Process Matrix Table Transformation
+        function processSelectedSheet() {
+            if (!rawWorkbook) return;
+
+            const selectedSheet = sheetSelect.value;
+            let sheetsToProcess = [];
+
+            if (selectedSheet === 'ALL' || !selectedSheet) {
+                sheetsToProcess = rawWorkbook.SheetNames;
+            } else {
+                sheetsToProcess = [selectedSheet];
+            }
+
+            convertedData = [];
+
+            sheetsToProcess.forEach(sheetName => {
+                const worksheet = rawWorkbook.Sheets[sheetName];
+                const rawJson = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+                
+                if (rawJson.length < 3) return;
+
+                // Guess PE Name from Sheet Name or default
+                let peName = sheetName.toUpperCase();
+                if (!peName.includes('PE')) peName = 'PE100';
+
+                // Locate Header Row (find row containing 'DN')
+                let headerRowIdx = -1;
+                for (let r = 0; r < Math.min(10, rawJson.length); r++) {
+                    if (rawJson[r].some(cell => String(cell).trim().toUpperCase() === 'DN')) {
+                        headerRowIdx = r;
+                        break;
+                    }
+                }
+
+                if (headerRowIdx === -1) return;
+
+                const headerRow = rawJson[headerRowIdx];
+                const subHeaderRow = rawJson[headerRowIdx + 1] || [];
+
+                // Detect PN Columns Structure
+                // Mapping column index to PN value and Sub-type ('t' or 'price')
+                const pnMapping = {}; 
+                let currentPN = null;
+
+                for (let c = 1; c < headerRow.length; c++) {
+                    const cellVal = String(headerRow[c]).trim();
+                    const subCellVal = String(subHeaderRow[c]).trim().toLowerCase();
+
+                    // Check if header cell defines a PN (e.g., "PN6", "PN 10", "PN12,5", "12.5")
+                    if (cellVal.toUpperCase().includes('PN') || (!isNaN(parseFloat(cellVal.replace(',', '.'))) && parseFloat(cellVal.replace(',', '.')) > 0)) {
+                        let matchedPN = cellVal.replace(/PN/i, '').trim();
+                        if (matchedPN) currentPN = matchedPN;
+                    }
+
+                    if (currentPN) {
+                        if (subCellVal.includes('dày') || subCellVal === 't') {
+                            pnMapping[c] = { pn: currentPN, type: 't' };
+                        } else if (subCellVal.includes('giá') || subCellVal.includes('đơn giá') || subCellVal.includes('niêm yết')) {
+                            pnMapping[c] = { pn: currentPN, type: 'price' };
+                        } else {
+                            // Fallback heuristic based on column pairs
+                            if (!pnMapping[c - 1] || pnMapping[c - 1].type === 'price') {
+                                pnMapping[c] = { pn: currentPN, type: 't' };
+                            } else {
+                                pnMapping[c] = { pn: currentPN, type: 'price' };
+                            }
+                        }
+                    }
+                }
+
+                // Extract Data Rows
+                for (let r = headerRowIdx + 2; r < rawJson.length; r++) {
+                    const row = rawJson[r];
+                    const dnVal = row[0];
+
+                    if (!dnVal || isNaN(parseInt(dnVal))) continue; // Skip non-data rows
+
+                    const dn = parseInt(dnVal);
+
+                    // Group by PN for this DN
+                    const pnsFound = {};
+                    Object.keys(pnMapping).forEach(colIdx => {
+                        const info = pnMapping[colIdx];
+                        const val = row[colIdx];
+
+                        if (val !== undefined && val !== '' && val !== null) {
+                            if (!pnsFound[info.pn]) pnsFound[info.pn] = {};
+                            pnsFound[info.pn][info.type] = val;
+                        }
+                    });
+
+                    // Build Flat Items
+                    Object.keys(pnsFound).forEach(pnKey => {
+                        const item = pnsFound[pnKey];
+                        if (item.price || item.t) {
+                            // Clean Price
+                            let rawPrice = String(item.price || '0').replace(/[^0-9]/g, '');
+                            let price = parseInt(rawPrice) || 0;
+
+                            // Clean Thickness
+                            let rawT = String(item.t || '-').replace(',', '.');
+                            let t = parseFloat(rawT) || item.t;
+
+                            if (price > 0 || t) {
+                                convertedData.push({
+                                    pe: peName,
+                                    dn: dn,
+                                    pn: pnKey.replace('.', ','),
+                                    t: typeof t === 'number' ? t.toString().replace('.', ',') : t,
+                                    price: price
+                                });
+                            }
+                        }
+                    });
+                }
+            });
+
+            updateFilterDropdowns();
+            applyFilters();
+            btnExport.disabled = convertedData.length === 0;
+        }
+
+        // Update Filters & Stats
+        function updateFilterDropdowns() {
+            const peSet = new Set(convertedData.map(d => d.pe));
+            const pnSet = new Set(convertedData.map(d => d.pn));
+
+            filterPE.innerHTML = '<option value="ALL">Tất cả PE</option>';
+            peSet.forEach(pe => {
+                filterPE.innerHTML += `<option value="${pe}">${pe}</option>`;
+            });
+
+            filterPN.innerHTML = '<option value="ALL">Tất cả PN</option>';
+            Array.from(pnSet).sort((a, b) => parseFloat(a.replace(',', '.')) - parseFloat(b.replace(',', '.'))).forEach(pn => {
+                filterPN.innerHTML += `<option value="${pn}">PN ${pn}</option>`;
+            });
+
+            statRowCount.textContent = convertedData.length.toLocaleString('vi-VN');
+            statPETypes.textContent = Array.from(peSet).join(', ') || '-';
+        }
+
+        // Apply Search & Filters
+        function applyFilters() {
+            const query = searchInput.value.toLowerCase().trim();
+            const peVal = filterPE.value;
+            const pnVal = filterPN.value;
+
+            filteredData = convertedData.filter(item => {
+                const matchPE = peVal === 'ALL' || item.pe === peVal;
+                const matchPN = pnVal === 'ALL' || item.pn === pnVal;
+                const matchQuery = !query || 
+                    String(item.dn).includes(query) || 
+                    String(item.pn).includes(query) || 
+                    String(item.price).includes(query) || 
+                    String(item.pe).toLowerCase().includes(query);
+
+                return matchPE && matchPN && matchQuery;
+            });
+
+            currentPage = 1;
+            renderTable();
+        }
+
+        // Render Table
+        function renderTable() {
+            tableBody.innerHTML = '';
+
+            if (filteredData.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="6" class="text-center py-12 text-slate-400">
+                            <i data-lucide="search-x" class="w-8 h-8 mx-auto mb-2 opacity-40"></i>
+                            Không tìm thấy dữ liệu phù hợp.
+                        </td>
+                    </tr>`;
+                lucide.createIcons();
+                showingCount.textContent = 'Hiển thị 0 / 0 bản ghi';
+                return;
+            }
+
+            const totalPages = Math.ceil(filteredData.length / pageSize) || 1;
+            currentPageEl.textContent = currentPage;
+            totalPagesEl.textContent = totalPages;
+
+            btnPrevPage.disabled = currentPage === 1;
+            btnNextPage.disabled = currentPage === totalPages;
+
+            const startIdx = (currentPage - 1) * pageSize;
+            const pageData = filteredData.slice(startIdx, startIdx + pageSize);
+
+            pageData.forEach((row, idx) => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-slate-50/80 transition-colors border-b border-slate-100';
+                tr.innerHTML = `
+                    <td class="py-2.5 px-4 text-center font-mono text-slate-400">${startIdx + idx + 1}</td>
+                    <td class="py-2.5 px-4 font-semibold text-blue-700">${row.pe}</td>
+                    <td class="py-2.5 px-4 font-medium text-slate-800">${row.dn}</td>
+                    <td class="py-2.5 px-4">
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            PN ${row.pn}
+                        </span>
+                    </td>
+                    <td class="py-2.5 px-4 font-mono text-slate-600">${row.t}</td>
+                    <td class="py-2.5 px-4 text-right font-semibold text-emerald-600 font-mono">
+                        ${row.price ? row.price.toLocaleString('vi-VN') : '-'}
+                    </td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            showingCount.textContent = `Hiển thị ${startIdx + 1} - ${Math.min(startIdx + pageSize, filteredData.length)} / ${filteredData.length} bản ghi`;
+        }
+
+        // Export to Excel
+        function exportToExcel() {
+            if (convertedData.length === 0) return;
+
+            // Format data for export
+            const exportRows = convertedData.map(item => ({
+                'PE': item.pe,
+                'DN': item.dn,
+                'PN': item.pn,
+                't': item.t,
+                'Giá niêm yết': item.price
+            }));
+
+            const worksheet = XLSX.utils.json_to_sheet(exportRows);
+
+            // Format Column Widths
+            worksheet['!cols'] = [
+                { wch: 12 }, // PE
+                { wch: 10 }, // DN
+                { wch: 10 }, // PN
+                { wch: 10 }, // t
+                { wch: 16 }  // Giá
+            ];
+
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, "HDPE_Converted");
+
+            XLSX.writeFile(workbook, "DATA_HDPE_Converted.xlsx");
+        }
+
+        // Load Sample Data (For Instant Demo)
+        function loadSampleData() {
+            convertedData = [
+                { pe: "PE100", dn: 20, pn: "12,5", t: "1,8", price: 8500 },
+                { pe: "PE100", dn: 20, pn: "16", t: "1,9", price: 8700 },
+                { pe: "PE100", dn: 25, pn: "10", t: "1,8", price: 10500 },
+                { pe: "PE100", dn: 25, pn: "12,5", t: "2", price: 11100 },
+                { pe: "PE100", dn: 25, pn: "16", t: "2,3", price: 13200 },
+                { pe: "PE100", dn: 32, pn: "8", t: "1,8", price: 14700 },
+                { pe: "PE100", dn: 32, pn: "10", t: "1,9", price: 14800 },
+                { pe: "PE100", dn: 32, pn: "12,5", t: "2,4", price: 18100 },
+                { pe: "PE100", dn: 32, pn: "16", t: "3", price: 21200 },
+                { pe: "PE100", dn: 40, pn: "6", t: "1,8", price: 17200 },
+                { pe: "PE100", dn: 40, pn: "8", t: "2", price: 18800 },
+                { pe: "PE100", dn: 40, pn: "10", t: "2,4", price: 22600 },
+                { pe: "PE100", dn: 40, pn: "12,5", t: "3", price: 27300 },
+                { pe: "PE100", dn: 40, pn: "16", t: "3,7", price: 32800 },
+                { pe: "PE100", dn: 50, pn: "6", t: "2", price: 24400 },
+                { pe: "PE100", dn: 50, pn: "8", t: "2,4", price: 29100 },
+                { pe: "PE100", dn: 50, pn: "10", t: "3", price: 34700 },
+                { pe: "PE100", dn: 50, pn: "12,5", t: "3,7", price: 41700 },
+                { pe: "PE100", dn: 50, pn: "16", t: "4,6", price: 50900 },
+                { pe: "PE100", dn: 63, pn: "6", t: "2,5", price: 38100 },
+                { pe: "PE100", dn: 63, pn: "8", t: "3", price: 45100 },
+                { pe: "PE100", dn: 63, pn: "10", t: "3,7", price: 55400 },
+                { pe: "PE100", dn: 63, pn: "12,5", t: "4,7", price: 67200 },
+                { pe: "PE100", dn: 63, pn: "16", t: "5,8", price: 80100 },
+                { pe: "PE100", dn: 75, pn: "6", t: "2,9", price: 51900 },
+                { pe: "PE100", dn: 75, pn: "8", t: "3,6", price: 64200 },
+                { pe: "PE100", dn: 75, pn: "10", t: "4,5", price: 79100 },
+                { pe: "PE100", dn: 75, pn: "12,5", t: "5,6", price: 95300 },
+                { pe: "PE100", dn: 75, pn: "16", t: "6,8", price: 113700 }
+            ];
+
+            fileName.textContent = 'Dữ liệu mẫu_HDPE.xlsx';
+            fileInfo.classList.remove('hidden');
+
+            sheetSelect.innerHTML = '<option value="PE100">PE100 (Mẫu)</option>';
+            sheetSelect.disabled = false;
+
+            updateFilterDropdowns();
+            applyFilters();
+            btnExport.disabled = false;
+        }
+
+        // Reset App State
+        function resetApp() {
+            rawWorkbook = null;
+            convertedData = [];
+            filteredData = [];
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            sheetSelect.innerHTML = '<option value="">Chưa có dữ liệu...</option>';
+            sheetSelect.disabled = true;
+            btnExport.disabled = true;
+            statRowCount.textContent = '0';
+            statPETypes.textContent = '-';
+            renderTable();
+        }
+    </script>
+</body>
+</html>
